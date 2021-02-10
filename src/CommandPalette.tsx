@@ -1,15 +1,15 @@
+import "./CommandPalette.css";
 import { useMachine } from "fini";
 import React, {
   useCallback,
   useRef,
-  memo,
-  useMemo,
   useContext,
   useEffect,
-  useState,
+  useReducer,
 } from "react";
-import fuzzysort from "fuzzysort";
 import { useToggleHotkeys } from "./useToggleHotkeys";
+import { Overlay } from "./Overlay";
+import { useSearch } from "./useSearch";
 
 const Input = React.forwardRef<
   HTMLInputElement,
@@ -26,7 +26,7 @@ const Input = React.forwardRef<
   <input
     autoFocus
     placeholder="Køyr"
-    className="w-full px-8 py-4 text-2xl outline-none bg-gray-50 focus:outline-none"
+    className="flex items-center w-full px-8 py-4 text-2xl border-b border-gray-300 outline-none bg-gray-50 focus:outline-none "
     ref={ref}
     onKeyDown={(event) => {
       switch (event.key) {
@@ -49,72 +49,287 @@ const Input = React.forwardRef<
   ></input>
 ));
 
-const highlightOpen = `<b style="color: var(--highlight-color)">`;
-const highlightClose = `</b>`;
+const Box: React.FC = ({ children }) => {
+  return (
+    <div className="fixed flex-col w-full max-w-3xl overflow-hidden bg-gray-100 border border-gray-300 shadow-2xl rounded-2xl top-40">
+      {children}
+    </div>
+  );
+};
 
 type CommandPaletteMachine = {
   states: {
+    closed: {
+      events: {
+        open: void;
+      };
+    };
     typing: {
       events: {
         change: string;
         up: void;
         down: void;
         select?: number;
+        highlight: number;
+        close: void;
       };
+    };
+    executing: {
       context: {
-        value: string;
-        index: number;
-        // history: string[] with first one preselected
+        command: Command;
+      };
+      events: {
+        done: void;
+        close: void;
       };
     };
   };
+  context: {
+    value: string;
+    index: number;
+  };
 };
 
-const limit = 10;
+const Options: React.FC = ({ children }) => (
+  <ul className="flex flex-col w-2/5 overflow-y-scroll border-r border-gray-300 max-h-100">
+    {children}
+  </ul>
+);
 
-const filterConfig = {
-  allowTypo: true,
-  key: "name",
-  limit,
-};
+const Option: React.FC<{
+  state: "normal" | "selected";
+  onSelect: VoidFunction;
+  onHighlight: VoidFunction;
+}> = ({ children, state, onSelect, onHighlight }) => (
+  <li>
+    <button
+      className={`px-8 w-full py-2 text-base text-left focus:outline-none hover:bg-blue-200 border-l-2 ${
+        state === "selected"
+          ? "bg-blue-100  border-blue-500"
+          : "border-transparent"
+      }`}
+      tabIndex={-1}
+      onClick={onSelect}
+      onAuxClick={onHighlight}
+    >
+      {children}
+    </button>
+  </li>
+);
 
-const filter = (commands: Command[]) => (value: string) => {
-  return value.length
-    ? fuzzysort.go(value, commands, filterConfig).map((res) => res.obj)
-    : commands.filter((_, idx) => idx < limit);
-};
+type CommandResult = void | Promise<void>;
 
 export interface Command {
   id: string;
   name: string;
-  command: () => void;
-  view?: React.ReactNode;
+  command?: () => CommandResult;
+  view?: React.ReactNode; // or `outlet`?
 }
 
-interface Props {
+interface RequiredCommand extends Command {
+  command: () => CommandResult;
+}
+
+const isRequiredCommand = (command: Command): command is RequiredCommand =>
+  !!command.command;
+
+type CommandEvent = "focus" | "blur" | "execute" | "done";
+
+type CommandEventObject = {
+  id: string;
+  event: CommandEvent;
+};
+
+const SubscribeContext = React.createContext<
+  | ((
+      event: CommandEvent,
+      id: string,
+      eventHandler: EventHandler
+    ) => () => void)
+  | undefined
+>(undefined);
+
+const NotifyContext = React.createContext<
+  ((events: CommandEventObject[]) => void) | undefined
+>(undefined);
+
+type SubscriptionEvent =
+  | {
+      type: "subscribe";
+      id: string;
+      event: CommandEvent;
+      eventHandler: EventHandler;
+    }
+  | {
+      type: "unsubscribe";
+      id: string;
+      event: CommandEvent;
+      eventHandler: EventHandler;
+    };
+
+type Subscription = [
+  event: CommandEvent,
+  id: string,
+  eventHandler: EventHandler
+];
+
+type EventHandler = () => void;
+
+export const CommandEventProvider: React.FC = ({ children }) => {
+  // TODO: rewrite as subscription machine? can support cleanup functions
+  const [subscriptions, dispatch] = useReducer(
+    (state: Subscription[], subEvent: SubscriptionEvent): Subscription[] => {
+      switch (subEvent.type) {
+        case "subscribe":
+          return [
+            ...state,
+            [subEvent.event, subEvent.id, subEvent.eventHandler],
+          ];
+        case "unsubscribe": {
+          return state.filter(
+            ([event, id, eventHandler]) =>
+              event === subEvent.id &&
+              id === subEvent.id &&
+              eventHandler === subEvent.eventHandler
+          );
+        }
+        default:
+          return state;
+      }
+    },
+    []
+  );
+
+  const subscribe = useCallback(
+    (event: CommandEvent, id: string, eventHandler: () => void) => {
+      dispatch({ type: "subscribe", event, id, eventHandler });
+
+      return () => dispatch({ type: "unsubscribe", event, id, eventHandler });
+    },
+    []
+  );
+
+  const notify = useCallback(
+    (events: CommandEventObject[]) => {
+      events.forEach((notifyEvent) => {
+        subscriptions.forEach(([event, id, eventHandler]) => {
+          if (id === notifyEvent.id && notifyEvent.event === event) {
+            eventHandler();
+          }
+        });
+      });
+    },
+    [subscriptions]
+  );
+
+  return (
+    <SubscribeContext.Provider value={subscribe}>
+      <NotifyContext.Provider value={notify}>{children}</NotifyContext.Provider>
+    </SubscribeContext.Provider>
+  );
+};
+
+const useEvent = (
+  event: CommandEvent,
+  id: string,
+  eventHandler: EventHandler
+) => {
+  const subscribe = useContext(SubscribeContext);
+  if (!subscribe) {
+    throw new Error("Event hooks must be used inside a CommandEventProvider");
+  }
+
+  useEffect(() => {
+    const unsubscribe = subscribe(event, id, eventHandler);
+    return unsubscribe;
+  }, [event, id, eventHandler, subscribe]);
+};
+
+/**
+ * Runs a given event handler when the specified command receives focus
+ *
+ * **Note:** can only be used inside a `<CommandEventProvider>`
+ *
+ * @param id command identifier
+ * @param eventHandler function to run
+ */
+export const useFocusEvent = (id: string, eventHandler: EventHandler): void =>
+  useEvent("focus", id, eventHandler);
+
+/**
+ * Runs a given event handler when the specified command loses focus
+ *
+ * **Note:** can only be used inside a `<CommandEventProvider>`
+ *
+ * @param id command identifier
+ * @param eventHandler function to run
+ */
+export const useBlurEvent = (id: string, eventHandler: EventHandler): void =>
+  useEvent("blur", id, eventHandler);
+
+/**
+ * Runs a given event handler when the specified command is executed
+ *
+ * **Note:** can only be used inside a `<CommandEventProvider>`
+ *
+ * @param id command identifier
+ * @param eventHandler function to run
+ */
+export const useExecuteEvent = (id: string, eventHandler: EventHandler): void =>
+  useEvent("execute", id, eventHandler);
+
+/**
+ * Runs a given event handler when the specified command is finished executing
+ *
+ * **Note:** can only be used inside a `<CommandEventProvider>`
+ *
+ * @param id command identifier
+ * @param eventHandler function to run
+ */
+export const useDoneEvent = (id: string, eventHandler: EventHandler): void =>
+  useEvent("done", id, eventHandler);
+
+interface CommandPaletteProps {
   commands: Command[];
-  /** If a Promise is returned,
-   * command palette will not close before it resolves */
-  onSelect: (command: Command) => void | Promise<any>;
-  onClickOutside: () => void;
 }
 
-export const CommandPalette = ({
-  commands,
-  onSelect,
-  onClickOutside,
-}: Props) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
+  const notify = useContext(NotifyContext);
 
-  const getResults = useCallback(filter(commands), [commands]);
+  const search = useSearch(commands);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const input = useMachine<CommandPaletteMachine>(
     {
+      closed: {
+        open: ({ update }) =>
+          update.typing({
+            index: 0,
+            value: "",
+          }),
+      },
       typing: {
         $entry: () => inputRef.current?.focus(),
-        change: ({ update }, value) => update.typing({ value, index: 0 }),
+        change: ({ update, context }, value) => {
+          return update.typing({ value, index: 0 }, () => {
+            const currentCommand = search(context.value)[context.index];
+            const nextCommand = search(value)[context.index];
+
+            if (nextCommand !== currentCommand) {
+              const notifications: CommandEventObject[] = [];
+              if (currentCommand) {
+                notifications.push({ id: currentCommand.id, event: "blur" });
+              }
+              if (nextCommand) {
+                notifications.push({ id: nextCommand.id, event: "focus" });
+              }
+              notify?.(notifications);
+            }
+          });
+        },
         down: ({ update, context }) => {
-          const results = getResults(context.value);
+          const results = search(context.value);
 
           if (!results.length) {
             return false;
@@ -123,10 +338,17 @@ export const CommandPalette = ({
           const nextIndex =
             context.index + 1 === results.length ? 0 : context.index + 1;
 
-          return update.typing({ index: nextIndex });
+          return update.typing({ index: nextIndex }, () => {
+            const currentCommand = results[context.index];
+            const nextCommand = results[nextIndex];
+            notify?.([
+              { id: currentCommand.id, event: "blur" },
+              { id: nextCommand.id, event: "focus" },
+            ]);
+          });
         },
         up: ({ update, context }) => {
-          const results = getResults(context.value);
+          const results = search(context.value);
 
           if (!results.length) {
             return false;
@@ -135,164 +357,82 @@ export const CommandPalette = ({
           const nextIndex =
             context.index - 1 < 0 ? results.length - 1 : context.index - 1;
 
-          return update.typing({ index: nextIndex });
+          return update.typing({ index: nextIndex }, () => {
+            const currentCommand = results[context.index];
+            const nextCommand = results[nextIndex];
+            notify?.([
+              { id: currentCommand.id, event: "blur" },
+              { id: nextCommand.id, event: "focus" },
+            ]);
+          });
         },
-        select: ({ update, context }, index) =>
-          update.typing(() => {
-            onSelect(getResults(context.value)[index ?? context.index]);
-          }),
+        select: ({ update, context }, index) => {
+          const command = search(context.value)[index ?? context.index];
+
+          return isRequiredCommand(command)
+            ? update.executing({ command }, (dispatch) => {
+                notify?.([
+                  {
+                    id: command.id,
+                    event: "execute",
+                  },
+                ]);
+                Promise.resolve(command.command()).then(() => {
+                  dispatch.done();
+                });
+              })
+            : undefined;
+        },
+        highlight: ({ update }, index) => {
+          return update.typing({ index });
+        },
+        close: ({ update }) => update.closed(),
+      },
+      executing: {
+        done: ({ update, context }) => {
+          update((d) => {
+            notify?.([
+              {
+                id: context.command.id,
+                event: "done",
+              },
+            ]);
+            d.close();
+          });
+        },
+        close: ({ update }) => update.closed(),
       },
     },
-    (initial) => initial.typing({ value: "", index: 0 })
+    (initial) => initial.closed({ value: "", index: 0 })
   );
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  return (
-    <div
-      ref={containerRef}
-      onClick={(event) => {
-        if (event.target === containerRef.current) {
-          onClickOutside();
-        }
-      }}
-      style={
-        {
-          ["--highlight-color"]:
-            // "#ff6528"
-            "#0054ed",
-        } as React.CSSProperties
-      }
-      className="absolute top-0 left-0 flex justify-center w-full h-full gap-5 p-8 "
-    >
-      <div className="fixed flex-col w-full max-w-3xl overflow-hidden bg-gray-100 border border-gray-300 shadow-2xl rounded-2xl top-40">
-        <div className="flex items-center border-b border-gray-300">
-          <Input on={input} value={input.context.value}></Input>
-        </div>
-        <Options
-          commands={commands}
-          search={input.context.value}
-          index={input.context.index}
-          onClickOption={input.select}
-        ></Options>
-      </div>
-    </div>
-  );
-};
-
-interface OptionsProps {
-  search: string;
-  commands: Command[];
-  index: number;
-  onClickOption: (index: number) => void;
-}
-
-const Options = memo(
-  ({ search, commands, index, onClickOption }: OptionsProps) => {
-    const targets = useMemo(
-      () =>
-        commands.map((opt) => ({
-          ...opt,
-          preparedName: fuzzysort.prepare(opt.name),
-        })),
-      [commands]
-    );
-
-    type Result = {
-      name: string;
-      markup: React.ReactNode;
-      view: React.ReactNode;
-    };
-
-    const results: Result[] = useMemo(
-      () =>
-        search.length
-          ? fuzzysort
-              .go(search, targets, {
-                ...filterConfig,
-                key: "preparedName",
-              })
-              .map((res) => ({
-                name: res.obj.name,
-                view: res.obj.view,
-                markup: (
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        fuzzysort.highlight(
-                          res,
-                          highlightOpen,
-                          highlightClose
-                        ) ?? res.obj.name,
-                    }}
-                  ></span>
-                ),
-              }))
-          : targets
-              .filter((_, idx) => idx < limit)
-              .map((target) => ({
-                name: target.name,
-                view: target.view,
-                markup: target.name,
-              })),
-      [search, targets]
-    );
-
-    return (
-      <div className="flex">
-        <ul className="flex flex-col w-2/5 overflow-y-scroll border-r border-gray-300 max-h-100">
-          {results.map((result, idx) => (
-            <li key={result.name}>
-              <button
-                className={`px-8 w-full py-2 text-base text-left focus:outline-none hover:bg-blue-200 border-l-2 ${
-                  index === idx
-                    ? "bg-blue-100  border-blue-500"
-                    : "border-transparent"
-                }`}
-                tabIndex={-1}
-                onClick={() => {
-                  onClickOption(index);
-                }}
-              >
-                {result.markup}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div>{results.length ? results[index].view : null}</div>
-      </div>
-    );
-  }
-);
-
-const CommandPaletteContext = React.createContext(false);
-
-export const CommandPaletteYo = (props: Omit<Props, "onClickOutside">) => {
-  const initialized = useContext(CommandPaletteContext);
-
-  const initializedRef = useRef(false);
-  if (initialized && !initializedRef.current) {
-    throw new Error("Multiple command palettes are not supported");
-  } else {
-    initializedRef.current = true;
-  }
-
-  const [isOpen, setIsOpen] = useState(false);
-  const close = () => setIsOpen(false);
   useToggleHotkeys({
-    onClose: close,
-    onToggle: () => setIsOpen((prev) => !prev),
+    onClose: input.close,
+    onToggle: input.closed ? input.open : input.close,
   });
 
-  return isOpen ? (
-    <CommandPalette
-      commands={props.commands}
-      onSelect={(command) => {
-        // TODO: check if next context is void
-        Promise.resolve(command.command()).then(close);
+  const results = search(input.context.value);
 
-        props.onSelect(command);
-      }}
-      onClickOutside={close}
-    ></CommandPalette>
+  return !input.closed ? (
+    <Overlay onClick={input.close}>
+      <Box>
+        <Input on={input} value={input.context.value}></Input>
+        <div className={"flex"}>
+          <Options>
+            {results.map((result, idx) => (
+              <Option
+                key={result.id}
+                state={idx === input.context.index ? "selected" : "normal"}
+                onSelect={() => input.select(idx)}
+                onHighlight={() => input.highlight(idx)}
+              >
+                {result.markup}
+              </Option>
+            ))}
+          </Options>
+          <div>{results.length ? results[input.context.index].view : null}</div>
+        </div>
+      </Box>
+    </Overlay>
   ) : null;
 };

@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [reactRefresh()],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/CmdKit.ts"),
+      entry: resolve(__dirname, "src/index.ts"),
       name: "cmdkit",
     },
     rollupOptions: {
