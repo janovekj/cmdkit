@@ -1,0 +1,36 @@
+{
+  "name": "cmdkit",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/cmdkit.umd.js",
+  "module": "./dist/cmdkit.es.js",
+  "exports": {
+    "*": {
+      "import": "./dist/cmdkit.es.js",
+      "require": "./dist/cmdkit.umd.js"
+    }
+  },
+  "dependencies": {
+    "fini": "^0.9.0",
+    "fuzzysort": "^1.1.4",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
+    "tailwindcss": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.25",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@vitejs/plugin-react-refresh": "^1.1.0",
+    "autoprefixer": "^10.2.4",
+    "typescript": "^4.1.2",
+    "vite": "^2.0.0-beta.65"
+  }
+}
