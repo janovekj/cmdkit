@@ -5,12 +5,13 @@ type Config = {
   onToggle: VoidFunction;
 };
 
-export const useToggleHotkeys = ({ onClose, onToggle }: Config) => {
+export const useToggleHotkeys = ({ onClose, onToggle }: Config): void => {
   useEffect(() => {
     const handleHotkey = (event: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().includes("MAC");
       const isPressingModifier = isMac ? event.metaKey : event.altKey;
       if (isPressingModifier && event.code === "KeyK") {
+        event.preventDefault();
         onToggle();
       }
 

@@ -6,6 +6,7 @@ import {
   useDoneEvent,
 } from "../CommandPalette";
 import React, { useContext, useRef, useState } from "react";
+import { tw } from "twind";
 
 export const useRunBigTask = (): Command => {
   const id = "runBigTask";
@@ -114,11 +115,11 @@ export const useToggleFlagTask = (): Command => {
     view: (
       <div>
         Change flag from{" "}
-        <span className={flag ? "text-green-700" : "text-red-600"}>
+        <span className={flag ? tw`text-green-700` : tw`text-red-600`}>
           {flag.toString()}
         </span>{" "}
         to{" "}
-        <span className={flag ? "text-red-600" : "text-green-700"}>
+        <span className={flag ? tw`text-red-600` : tw`text-green-700`}>
           {(!flag).toString()}
         </span>
         <p>Have toggled {count} times</p>

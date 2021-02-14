@@ -1,4 +1,3 @@
-import "./CommandPalette.css";
 import { useMachine } from "fini";
 import React, {
   useCallback,
@@ -10,48 +9,63 @@ import React, {
 import { useToggleHotkeys } from "./useToggleHotkeys";
 import { Overlay } from "./Overlay";
 import { useSearch } from "./useSearch";
+import { tw, setup } from "twind";
 
-const Input = React.forwardRef<
-  HTMLInputElement,
-  {
-    on: {
-      down: VoidFunction;
-      up: VoidFunction;
-      select: VoidFunction;
-      change: (value: string) => void;
-    };
-    value: string;
-  }
->(({ on, value }, ref) => (
+setup({
+  theme: {
+    extend: {
+      maxHeight: {
+        100: "25rem",
+      },
+    },
+  },
+});
+
+type On = {
+  down: VoidFunction;
+  up: VoidFunction;
+  select: VoidFunction;
+  change: (value: string) => void;
+};
+
+type InputProps = {
+  on: On;
+  value: string;
+  iRef: React.MutableRefObject<HTMLInputElement | null>;
+};
+
+const Input = ({ value, iRef, ...rest }: InputProps) => (
   <input
+    className={tw`flex items-center w-full px-8 py-4 text-2xl border-b border-gray-300 outline-none bg-gray-50 focus:outline-none `}
     autoFocus
     placeholder="Køyr"
-    className="flex items-center w-full px-8 py-4 text-2xl border-b border-gray-300 outline-none bg-gray-50 focus:outline-none "
-    ref={ref}
+    ref={iRef}
     onKeyDown={(event) => {
       switch (event.key) {
         case "ArrowDown":
           event.preventDefault();
-          on.down();
+          rest.on.down();
           break;
         case "ArrowUp":
           event.preventDefault();
-          on.up();
+          rest.on.up();
           break;
         case "Enter":
           event.preventDefault();
-          on.select();
+          rest.on.select();
           break;
       }
     }}
     value={value}
-    onChange={(event) => on.change(event.target.value)}
+    onChange={(event) => rest.on.change(event.target.value)}
   ></input>
-));
+);
 
 const Box: React.FC = ({ children }) => {
   return (
-    <div className="fixed flex-col w-full max-w-3xl overflow-hidden bg-gray-100 border border-gray-300 shadow-2xl rounded-2xl top-40">
+    <div
+      className={tw`fixed flex-col w-full max-w-3xl overflow-hidden bg-gray-100 border border-gray-300 shadow-2xl rounded-2xl top-40`}
+    >
       {children}
     </div>
   );
@@ -91,7 +105,9 @@ type CommandPaletteMachine = {
 };
 
 const Options: React.FC = ({ children }) => (
-  <ul className="flex flex-col w-2/5 overflow-y-scroll border-r border-gray-300 max-h-100">
+  <ul
+    className={tw`flex flex-col w-2/5 overflow-y-scroll border-r border-gray-300 max-h-100`}
+  >
     {children}
   </ul>
 );
@@ -103,7 +119,7 @@ const Option: React.FC<{
 }> = ({ children, state, onSelect, onHighlight }) => (
   <li>
     <button
-      className={`px-8 w-full py-2 text-base text-left focus:outline-none hover:bg-blue-200 border-l-2 ${
+      className={tw`px-8 w-full py-2 text-base text-left focus:outline-none hover:bg-blue-200 border-l-2 ${
         state === "selected"
           ? "bg-blue-100  border-blue-500"
           : "border-transparent"
@@ -416,8 +432,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
   return !input.closed ? (
     <Overlay onClick={input.close}>
       <Box>
-        <Input on={input} value={input.context.value}></Input>
-        <div className={"flex"}>
+        <Input on={input} value={input.context.value} iRef={inputRef}></Input>
+        <div className={tw`flex`}>
           <Options>
             {results.map((result, idx) => (
               <Option

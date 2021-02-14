@@ -1,10 +1,12 @@
 {
   "name": "cmdkit",
+  "description": "Command palette component for React",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview"
+    "build": "vite build && tsc",
+    "serve": "vite preview",
+    "release": "np"
   },
   "files": [
     "dist"
@@ -12,17 +14,19 @@
   "main": "./dist/cmdkit.umd.js",
   "module": "./dist/cmdkit.es.js",
   "exports": {
-    "*": {
+    ".": {
       "import": "./dist/cmdkit.es.js",
       "require": "./dist/cmdkit.umd.js"
     }
   },
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "fini": "^0.9.0",
     "fuzzysort": "^1.1.4",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
-    "tailwindcss": "^2.0.3"
+    "tailwindcss": "^2.0.3",
+    "twind": "^0.15.1"
   },
   "devDependencies": {
     "@types/node": "^14.14.25",
@@ -35,6 +39,7 @@
     "eslint": "^7.20.0",
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "np": "^7.4.0",
     "typescript": "^4.1.2",
     "vite": "^2.0.0-beta.65"
   }

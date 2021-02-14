@@ -13,9 +13,12 @@
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
     "jsx": "react",
-    "keyofStringsOnly": true
+    "keyofStringsOnly": true,
+    "outDir": "./dist",
+    "emitDeclarationOnly": true,
+    "declaration": true
   },
-  "include": ["./src"]
+  "include": ["./src"],
+  "exclude": ["./src/examples"]
 }

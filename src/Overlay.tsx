@@ -1,11 +1,10 @@
 import React, { useRef } from "react";
+import { tw } from "twind";
 
-interface Props {
-  onClick: VoidFunction;
-  children: React.ReactNode;
-}
-
-export const Overlay = ({ onClick, children }: Props) => {
+export const Overlay: React.FC<{ onClick: VoidFunction }> = ({
+  onClick,
+  children,
+}) => {
   const ref = useRef<HTMLDivElement>(null);
 
   return (
@@ -23,7 +22,7 @@ export const Overlay = ({ onClick, children }: Props) => {
             "#0054ed",
         } as React.CSSProperties
       }
-      className="absolute top-0 left-0 flex justify-center w-full h-full gap-5 p-8 "
+      className={tw`absolute top-0 left-0 flex justify-center w-full h-full gap-5 p-8`}
     >
       {children}
     </div>
