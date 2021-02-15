@@ -2,6 +2,15 @@
   "name": "cmdkit",
   "description": "Command palette component for React",
   "version": "0.1.1",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "devtool",
+    "developer tools",
+    "hotkey"
+  ],
+  "repository": "janovekj/cmdkit",
+  "homepage": "https://github.com/janovekj/cmdkit#README",
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc",
