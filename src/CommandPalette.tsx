@@ -160,7 +160,7 @@ interface RequiredCommand extends Command {
 const isRequiredCommand = (command: Command): command is RequiredCommand =>
   !!command.command;
 
-type CommandEvent = "focus" | "blur" | "execute" | "done";
+type CommandEvent = "focus" | "blur" | "execute" | "done" | "appear";
 
 type CommandEventObject = {
   id: string;
@@ -316,6 +316,17 @@ export const useExecuteEvent = (id: string, eventHandler: EventHandler): void =>
 export const useDoneEvent = (id: string, eventHandler: EventHandler): void =>
   useEvent("done", id, eventHandler);
 
+/**
+ * Runs a given event handler when the specified command appears in the results
+ *
+ * **Note:** can only be used inside a `<CommandEventProvider>`
+ *
+ * @param id command identifier
+ * @param eventHandler function to run
+ */
+export const useAppearEvent = (id: string, eventHandler: EventHandler): void =>
+  useEvent("appear", id, eventHandler);
+
 interface CommandPaletteProps {
   commands: Command[];
 }
@@ -340,19 +351,33 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
         $entry: () => inputRef.current?.focus(),
         change: ({ update, context }, value) => {
           return update.typing({ value, index: 0 }, () => {
-            const currentCommand = search(context.value)[context.index];
-            const nextCommand = search(value)[context.index];
+            const currentResults = search(context.value);
+            const currentCommand = currentResults[context.index];
+
+            const nextResults = search(value);
+            const nextCommand = nextResults[context.index];
+
+            const ids = new Set(currentResults.map(({ id }) => id));
+
+            const notifications: CommandEventObject[] = [];
+
+            nextResults
+              .filter((nextCommand) => {
+                return !ids.has(nextCommand.id);
+              })
+              .forEach((relevantCommand) =>
+                notifications.push({ id: relevantCommand.id, event: "appear" })
+              );
 
             if (nextCommand !== currentCommand) {
-              const notifications: CommandEventObject[] = [];
               if (currentCommand) {
                 notifications.push({ id: currentCommand.id, event: "blur" });
               }
               if (nextCommand) {
                 notifications.push({ id: nextCommand.id, event: "focus" });
               }
-              notify?.(notifications);
             }
+            notify?.(notifications);
           });
         },
         down: ({ update, context }) => {
