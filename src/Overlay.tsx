@@ -18,8 +18,9 @@ export const Overlay: React.FC<{ onClick: VoidFunction }> = ({
       style={
         {
           ["--highlight-color"]:
-            // "#ff6528"
-            "#0054ed",
+            //  "#ff6528",
+            // "#0054ed",
+            "#ff5f20",
         } as React.CSSProperties
       }
       className={tw`absolute top-0 left-0 flex justify-center w-full h-full gap-5 p-8`}

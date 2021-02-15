@@ -37,7 +37,7 @@ type InputProps = {
 
 const Input = ({ value, iRef, ...rest }: InputProps) => (
   <input
-    className={tw`flex items-center w-full px-8 py-4 text-2xl border-b border-gray-300 outline-none bg-gray-50 focus:outline-none `}
+    className={tw`flex items-center w-full px-8 py-4 text-xl text-white placeholder-gray-400 bg-transparent border-b border-gray-600 outline-none border-opacity-80 focus:outline-none `}
     autoFocus
     placeholder="Køyr"
     ref={iRef}
@@ -65,7 +65,8 @@ const Input = ({ value, iRef, ...rest }: InputProps) => (
 const Box: React.FC = ({ children }) => {
   return (
     <div
-      className={tw`fixed flex-col w-full max-w-3xl overflow-hidden bg-gray-100 border border-gray-300 shadow-2xl rounded-2xl top-40`}
+      style={{ backdropFilter: "blur(2px)" }}
+      className={tw`fixed flex-col w-full max-w-3xl overflow-hidden text-white bg-gray-900 border-2 border-gray-600 shadow-2xl border-opacity-40 bg-opacity-90 rounded-2xl top-40`}
     >
       {children}
     </div>
@@ -107,7 +108,7 @@ type CommandPaletteMachine = {
 
 const Options: React.FC = ({ children }) => (
   <ul
-    className={tw`flex flex-col w-2/5 overflow-y-scroll border-r border-gray-300 max-h-100`}
+    className={tw`flex flex-col w-2/5 p-3 overflow-y-scroll border-r border-gray-600 max-h-100`}
   >
     {children}
   </ul>
@@ -120,15 +121,24 @@ const Option: React.FC<{
 }> = ({ children, state, onSelect, onHighlight }) => (
   <li>
     <button
-      className={tw`px-8 w-full py-2 text-base text-left focus:outline-none hover:bg-blue-200 border-l-2 ${
-        state === "selected"
-          ? "bg-blue-100  border-blue-500"
-          : "border-transparent"
+      className={tw`relative px-8 rounded-md w-full py-2 text-base text-left focus:outline-none hover:bg-gray-500 hover:bg-opacity-70 ${
+        state === "selected" ? "bg-gray-600 bg-opacity-60" : ""
       }`}
       tabIndex={-1}
       onClick={onSelect}
       onAuxClick={onHighlight}
     >
+      {state === "selected" && (
+        <span
+          style={{
+            top: "calc(50% - 3px)",
+            left: "12px",
+            height: "6px",
+            width: "6px",
+          }}
+          className={tw`absolute bg-white rounded-sm`}
+        ></span>
+      )}
       {children}
     </button>
   </li>
