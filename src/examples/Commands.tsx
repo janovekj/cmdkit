@@ -157,11 +157,15 @@ export const useAwareTask = (): Command => {
   const [isFocused, setIsFocused] = useState(false);
 
   useFocusEvent(id, () => {
-    console.log("exec onfocus");
-
+    console.log(id, "focused");
     setIsFocused(true);
   });
-  useBlurEvent(id, () => setIsFocused(false));
+
+  useBlurEvent(id, () => {
+    console.log(id, "blurred");
+    setIsFocused(false);
+  });
+
   useExecuteEvent(id, () => setValue(""));
 
   return {

@@ -11,6 +11,7 @@ import { Overlay } from "./Overlay";
 import { useSearch } from "./useSearch";
 import { tw, setup } from "twind";
 
+// All settings here should be reflected in `tailwind.config.js`
 setup({
   theme: {
     extend: {
