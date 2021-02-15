@@ -3,9 +3,14 @@ import { useEffect } from "react";
 type Config = {
   onClose: VoidFunction;
   onToggle: VoidFunction;
+  onSelect: VoidFunction;
 };
 
-export const useToggleHotkeys = ({ onClose, onToggle }: Config): void => {
+export const useCommandPaletteHotkeys = ({
+  onClose,
+  onToggle,
+  onSelect,
+}: Config): void => {
   useEffect(() => {
     const handleHotkey = (event: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().includes("MAC");
@@ -18,10 +23,14 @@ export const useToggleHotkeys = ({ onClose, onToggle }: Config): void => {
       if (event.code === "Escape") {
         onClose();
       }
+
+      if (event.code === "Enter" && event.shiftKey) {
+        onSelect();
+      }
     };
 
     document.addEventListener("keydown", handleHotkey);
 
     return () => document.removeEventListener("keydown", handleHotkey);
-  }, [onClose, onToggle]);
+  }, [onClose, onToggle, onSelect]);
 };

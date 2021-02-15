@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useReducer,
 } from "react";
-import { useToggleHotkeys } from "./useToggleHotkeys";
+import { useCommandPaletteHotkeys } from "./useCommandPaletteHotkeys";
 import { Overlay } from "./Overlay";
 import { useSearch } from "./useSearch";
 import { tw, setup } from "twind";
@@ -423,9 +423,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
     (initial) => initial.closed({ value: "", index: 0 })
   );
 
-  useToggleHotkeys({
+  useCommandPaletteHotkeys({
     onClose: input.close,
     onToggle: input.closed ? input.open : input.close,
+    onSelect: input.select,
   });
 
   const results = search(input.context.value);
