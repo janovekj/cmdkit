@@ -106,6 +106,19 @@ type CommandPaletteMachine = {
   };
 };
 
+const NoResults = () => {
+  return (
+    <p
+      className={tw`flex flex-col items-center justify-center w-full gap-2 p-4 text-xl font-light`}
+    >
+      <span>No results</span>
+      <span aria-hidden className={tw`text-xl`}>
+        ¯\_(ツ)_/¯
+      </span>
+    </p>
+  );
+};
+
 const Options: React.FC = ({ children }) => (
   <ul
     className={tw`flex flex-col w-2/5 p-3 overflow-y-scroll border-r border-gray-600 max-h-100`}
@@ -481,19 +494,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
       <Box>
         <Input on={input} value={input.context.value} iRef={inputRef}></Input>
         <div className={tw`flex border-b border-gray-600 border-opacity-80`}>
-          <Options>
-            {results.map((result, idx) => (
-              <Option
-                key={result.id}
-                state={idx === input.context.index ? "selected" : "normal"}
-                onSelect={() => input.select(idx)}
-                onHighlight={() => input.highlight(idx)}
-              >
-                {result.markup}
-              </Option>
-            ))}
-          </Options>
-          <div>{results.length ? results[input.context.index].view : null}</div>
+          {results.length ? (
+            <>
+              <Options>
+                {results.map((result, idx) => (
+                  <Option
+                    key={result.id}
+                    state={idx === input.context.index ? "selected" : "normal"}
+                    onSelect={() => input.select(idx)}
+                    onHighlight={() => input.highlight(idx)}
+                  >
+                    {result.markup}
+                  </Option>
+                ))}
+              </Options>
+              <div>
+                {results.length ? results[input.context.index].view : null}
+              </div>
+            </>
+          ) : (
+            <NoResults />
+          )}
         </div>
         <ul className={tw`flex gap-4 px-4 py-4 text-xs`}>
           <Hotkey keyCode={"Esc"} action={"Close"}></Hotkey>
