@@ -74,7 +74,9 @@ const App = () => {
 
 # API Reference
 
-## `CommandPalette`
+## Components
+
+### `CommandPalette`
 
 Renders a command palette in your application
 
@@ -102,7 +104,7 @@ const App = () => (
 );
 ```
 
-## `CommandEventProvider`
+### `CommandEventProvider`
 
 Manages the state of [event hooks](#hooks) which commands can use to provide advanced functionality.
 
