@@ -181,7 +181,7 @@ export interface Command {
   id: string;
   name: string;
   command?: () => CommandResult;
-  view?: React.ReactNode; // or `outlet`?
+  view?: React.ReactNode;
 }
 
 interface RequiredCommand extends Command {
