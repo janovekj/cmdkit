@@ -74,6 +74,32 @@ const App = () => {
 
 # API Reference
 
+## Types
+
+### `Command`
+
+[`<CommandPalette />`](#commandpalette) accepts a list of `Command`s, which is an object with the following properties:
+
+- `id` A string that uniquely identifies the command
+- `name` The displayed name in the command palette
+- `command` (Optional) The function to run when the command is selected
+- `view` (Optional) A React element to show in the pane next to the search results
+
+```tsx
+import { Command } from "cmdkit";
+
+const logTime: Command = {
+  id: "logTime",
+  name: "Log the current time",
+  command: () => console.log(new Date()),
+  view: (
+    <div>
+      <p>This command logs the current time</p>
+    </div>
+  ),
+};
+```
+
 ## Components
 
 ### `CommandPalette`
@@ -88,6 +114,8 @@ Renders a command palette in your application
 Accepts a list of [`Command`]()s through the `commands` prop.
 
 ```tsx
+import { CommandPalette } from "cmdkit";
+
 const App = () => (
   <div>
     <CommandPalette
