@@ -1,7 +1,7 @@
 {
   "name": "cmdkit",
   "description": "Command palette component for React",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "license": "MIT",
   "keywords": [
     "react",
