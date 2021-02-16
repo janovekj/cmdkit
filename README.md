@@ -44,20 +44,20 @@ ReactDOM.render(
 );
 
 // App.tsx
-import { CommandPalette } from "cmdkit";
+import { CommandPalette, useAppearEvent } from "cmdkit";
 
 const useCounterLog = () => {
   const id = "counterLog";
 
   const [count, setCount] = useState(0);
 
-  useExecuteEvent(id, () => setCount((prev) => prev + 1));
+  useAppearEvent(id, () => setCount((prev) => prev + 1));
 
   return {
     id,
     name: `Log the current time`,
     command: () => console.log(new Date()),
-    view: <p>Has logged the time {count} times</p>,
+    view: <p>This command has appeared in the search results {count} times</p>,
   };
 };
 
