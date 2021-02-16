@@ -1015,5 +1015,8 @@ function shuffleArray<T>(array: T[]) {
 
 const words1 = shuffleArray(original);
 const words2 = shuffleArray(original);
+const words3 = shuffleArray(original);
 
-export const words = words1.map((word, index) => `${word} ${words2[index]}`);
+export const words = words1
+  .map((word, index) => `${word} ${words2[index]} ${words3[index]}`)
+  .filter((_, idx) => idx < 20);
