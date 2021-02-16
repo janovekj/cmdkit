@@ -71,24 +71,3 @@ const App = () => {
   );
 };
 ```
-
-### Resources
-
-- How to load conditionally
-  - https://kentcdodds.com/blog/make-your-own-dev-tools
-
-### TODO
-
-- transitions
-  - sub-command palettes
-  - stay at current palette
-  - dialogs
-- history
-  - recent searches
-  - restore with prev command
-- more event handlers
-  - mount / unmount
-  - become relevant / irrelevant
-- rewrite subscription reducer to machine
-  - can support cleanup functions OOTB
-  - terser `notify` API (`subscription.done(id)`)
