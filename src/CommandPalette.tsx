@@ -161,10 +161,18 @@ const Hotkey: React.FC<{
   keyCode: string;
   action: string;
 }> = ({ keyCode, action }) => (
-  <li>
+  <li className={tw`flex items-center gap-2`}>
     <span className={tw`px-2 py-1 bg-gray-600 rounded-md`}>{keyCode}</span>
-    <span> - {action}</span>
+    <span>{action}</span>
   </li>
+);
+
+const Hotkeys = () => (
+  <ul className={tw`flex gap-4 px-4 py-4 text-xs`}>
+    <Hotkey keyCode={"Esc"} action={"Close"}></Hotkey>
+    <Hotkey keyCode={"↵"} action={"Run"}></Hotkey>
+    <Hotkey keyCode={"↑↓"} action={"Navigate"}></Hotkey>
+  </ul>
 );
 
 type CommandResult = void | Promise<void>;
@@ -516,11 +524,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
             <NoResults />
           )}
         </div>
-        <ul className={tw`flex gap-4 px-4 py-4 text-xs`}>
-          <Hotkey keyCode={"Esc"} action={"Close"}></Hotkey>
-          <Hotkey keyCode={"↵"} action={"Run"}></Hotkey>
-          <Hotkey keyCode={"↑↓"} action={"Navigate"}></Hotkey>
-        </ul>
+        <Hotkeys></Hotkeys>
       </Box>
     </Overlay>
   ) : null;
