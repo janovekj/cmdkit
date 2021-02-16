@@ -144,6 +144,16 @@ const Option: React.FC<{
   </li>
 );
 
+const Hotkey: React.FC<{
+  keyCode: string;
+  action: string;
+}> = ({ keyCode, action }) => (
+  <li>
+    <span className={tw`px-2 py-1 bg-gray-600 rounded-md`}>{keyCode}</span>
+    <span> - {action}</span>
+  </li>
+);
+
 type CommandResult = void | Promise<void>;
 
 export interface Command {
@@ -470,7 +480,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
     <Overlay onClick={input.close}>
       <Box>
         <Input on={input} value={input.context.value} iRef={inputRef}></Input>
-        <div className={tw`flex`}>
+        <div className={tw`flex border-b border-gray-600 border-opacity-80`}>
           <Options>
             {results.map((result, idx) => (
               <Option
@@ -485,6 +495,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ commands }) => {
           </Options>
           <div>{results.length ? results[input.context.index].view : null}</div>
         </div>
+        <ul className={tw`flex gap-4 px-4 py-4 text-xs`}>
+          <Hotkey keyCode={"Esc"} action={"Close"}></Hotkey>
+          <Hotkey keyCode={"↵"} action={"Run"}></Hotkey>
+          <Hotkey keyCode={"↑↓"} action={"Navigate"}></Hotkey>
+        </ul>
       </Box>
     </Overlay>
   ) : null;
