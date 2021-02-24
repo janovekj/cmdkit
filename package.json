@@ -15,6 +15,7 @@
     "dev": "vite",
     "build": "vite build && tsc",
     "serve": "vite preview",
+    "prepare": "yarn build",
     "release": "np"
   },
   "files": [
